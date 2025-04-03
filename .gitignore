@@ -1,0 +1,6 @@
+node_modules/
+changes/*
+dev/*
+prod/*
+.env
+sslCert.pem

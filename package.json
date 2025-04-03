@@ -1,0 +1,36 @@
+{
+  "name": "dbsync",
+  "version": "1.0.0",
+  "description": "Extract and compare MySQL DDLs from dev and prod.",
+  "keywords": [
+    "mysql",
+    "db",
+    "sync",
+    "backup"
+  ],
+  "homepage": "https://github.com/YaseenAlMufti/dbsync#readme",
+  "bugs": {
+    "url": "https://github.com/YaseenAlMufti/dbsync/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YaseenAlMufti/dbsync.git"
+  },
+  "license": "ISC",
+  "author": "Yaseen Al Mufti",
+  "type": "commonjs",
+  "main": "extract.js",
+  "scripts": {
+    "clean": "rm -rf dev prod changes",
+    "sync": "node main.js",
+    "extract:dev": "node extract.js dev",
+    "extract:prod": "node extract.js prod",
+    "compare": "node compare.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "diff": "^7.0.0",
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.14.0"
+  }
+}
