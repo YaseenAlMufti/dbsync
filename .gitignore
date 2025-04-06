@@ -2,5 +2,9 @@ node_modules/
 changes/*
 dev/*
 prod/*
+deployments/*
+deployed/*
 .env
 sslCert.pem
+*.sql
+.DS_Store

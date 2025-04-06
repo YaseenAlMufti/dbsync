@@ -25,12 +25,17 @@
     "sync": "node main.js",
     "extract:dev": "node extract.js dev",
     "extract:prod": "node extract.js prod",
-    "compare": "node compare.js"
+    "compare": "node compare.js",
+    "prepareAI": "node prepare-ai.js",
+    "deploy": "node deployChanges.js",
+    "deploy:dry": "npm run deploy -- --dry"
   },
   "dependencies": {
     "chalk": "^4.1.2",
     "diff": "^7.0.0",
     "dotenv": "^16.4.7",
-    "mysql2": "^3.14.0"
+    "moment": "^2.30.1",
+    "mysql2": "^3.14.0",
+    "openai": "^4.91.1"
   }
 }
