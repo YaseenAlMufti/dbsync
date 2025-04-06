@@ -30,8 +30,27 @@ module.exports = {
         waitForConnections: true,
         queueLimit: 0
     },
-    ignore: {
-        tables: ['logs', 'sessions'],
-        procedures: ['test_proc'],
+    deployment: {
+        env: process.env.DEPLOYMENT_ENV || 'prod'
     },
+    ignore: {
+        tables: [
+            'logs',
+            'sessions',
+            'caregiverforgotpasswordlog',
+            'caregiverloginattempts',
+            'caregiverprofile',
+            'caregiverratings',
+            'caregivers',
+            'caregiversession',
+            'junk',
+            'provideragencylookup'
+        ],
+        procedures: [
+            'test_proc'
+        ],
+    },
+    openai: {
+        apiKey: process.env.OPENAI_API_KEY,
+    }
 };

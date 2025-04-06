@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 const fs = require('fs/promises');
 const path = require('path');
-const config = require('./db-config');
+const config = require('./config');
 
 async function extractDDL(env) {
   const connection = await mysql.createConnection(config[env]);

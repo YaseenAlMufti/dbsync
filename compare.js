@@ -2,7 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const diff = require('diff');
 const chalk = require('chalk');
-const config = require('./db-config');
+const config = require('./config');
 
 function cleanTableDDL(content) {
   return content.replace(/\) ENGINE=InnoDB AUTO_INCREMENT=\d+ DEFAULT CHARSET=\w+/g, '');
@@ -19,6 +19,24 @@ function resetAutoIncrement(ddl) {
   return ddl.replace(/AUTO_INCREMENT=\d+/g, 'AUTO_INCREMENT=1');
 }
 
+function formatProcedureDDL(procName, ddl, env) {
+  const dbName = config[env].database;
+  const delimiter = 'DELIMITER $$';
+  const endDelimiter = 'DELIMITER ;';
+  const useDb = `USE \`${dbName}\`;`;
+
+  const formatted = [
+    useDb,
+    delimiter,
+    `DROP PROCEDURE IF EXISTS \`${procName}\`$$`,
+    ddl.replace(/;$/, '') + '$$',
+    endDelimiter,
+    ''
+  ].join('\n');
+
+  return formatted;
+}
+
 async function compareFiles(file1, file2, type) {
   let [content1, content2] = await Promise.all([
     fs.readFile(file1, 'utf8'),
@@ -28,7 +46,7 @@ async function compareFiles(file1, file2, type) {
   if (type === 'table') {
     content1 = cleanTableDDL(content1);
     content2 = cleanTableDDL(content2);
-    return diff.createTwoFilesPatch(file1, file2, content2, content1);
+    return diff.createTwoFilesPatch(file1, file2, content1, content2);
   } else if (type === 'procedure') {
     content1 = cleanProcedureDDL(content1);
     content2 = cleanProcedureDDL(content2);
@@ -75,21 +93,30 @@ async function compare() {
   for (const proc of devProcs) {
     const devProcPath = `dev/procedures/${proc}`;
     const prodProcPath = `prod/procedures/${proc}`;
+    const procName = proc.replace('.sql', '');
 
     if (!prodProcs.includes(proc)) {
-      let ddl = await fs.readFile(devProcPath, 'utf8');
-      ddl = ddl.replace(/DEFINER=`.*?`@`.*?`/, '');
-      await fs.writeFile(`changes/procedures/${proc}`, ddl);
+      let ddl = (await fs.readFile(devProcPath, 'utf8'))
+        .replace(/^DROP PROCEDURE.*?;$/gm, '') // Remove DROP PROCEDURE lines
+        .replace(/^USE .*?;$/gm, '')           // Remove USE db lines
+        .replace(/^DELIMITER .*?$/gm, '')      // Remove any existing delimiters
+        .trim();
+      const formatted = formatProcedureDDL(procName, ddl, 'prod');
+      await fs.writeFile(`changes/procedures/${proc}`, formatted);
       console.log(chalk.green(`New procedure detected: ${proc}`));
     } else {
       const differences = await compareFiles(devProcPath, prodProcPath, 'procedure');
       const changed = differences.some((d) => d.added || d.removed);
 
       if (changed) {
-        let ddl = await fs.readFile(devProcPath, 'utf8');
+        let ddl = (await fs.readFile(devProcPath, 'utf8'))
+          .replace(/^DROP PROCEDURE.*?;$/gm, '') // Remove DROP PROCEDURE lines
+          .replace(/^USE .*?;$/gm, '')           // Remove USE db lines
+          .replace(/^DELIMITER .*?$/gm, '')      // Remove any existing delimiters
+          .trim();
         ddl = ddl.replace(new RegExp(config.dev.database, 'g'), config.prod.database);
-        ddl = ddl.replace(/DEFINER=`.*?`@`.*?`/, '');
-        await fs.writeFile(`changes/procedures/${proc}`, ddl);
+        const formatted = formatProcedureDDL(procName, ddl, 'prod');
+        await fs.writeFile(`changes/procedures/${proc}`, formatted);
         console.log(chalk.yellow(`Changes detected in procedure: ${proc}`));
       }
     }
