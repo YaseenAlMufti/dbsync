@@ -5,6 +5,7 @@ const readline = require('readline');
 const mysql = require('mysql2/promise');
 const chalk = require('chalk');
 const config = require('./config');
+const { splitStatements } = require('./split-sql');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -90,8 +91,13 @@ async function deploy() {
     try {
       if (!isDryRun) {
         const [result] = await connection.query(sql);
+        const statements = splitStatements(sql);
         if (Array.isArray(result)) {
-          log = result.map((r, i) => `Statement ${i + 1}: ${formatResultMessage(sql, r)}`).join('\n');
+            if (statements.length === result.length) {
+                log = result.map((r, i) => `Statement ${i + 1}: ${formatResultMessage(statements[i], r)}`).join('\n');
+            } else {
+                log = result.map((r, i) => `Statement ${i + 1}: ${formatResultMessage(sql, r)}`).join('\n');
+            }
         } else {
           log = formatResultMessage(sql, result);
         }

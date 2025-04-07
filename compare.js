@@ -19,22 +19,9 @@ function resetAutoIncrement(ddl) {
   return ddl.replace(/AUTO_INCREMENT=\d+/g, 'AUTO_INCREMENT=1');
 }
 
-function formatProcedureDDL(procName, ddl, env) {
-  const dbName = config[env].database;
-  const delimiter = 'DELIMITER $$';
-  const endDelimiter = 'DELIMITER ;';
-  const useDb = `USE \`${dbName}\`;`;
-
-  const formatted = [
-    useDb,
-    delimiter,
-    `DROP PROCEDURE IF EXISTS \`${procName}\`$$`,
-    ddl.replace(/;$/, '') + '$$',
-    endDelimiter,
-    ''
-  ].join('\n');
-
-  return formatted;
+function formatProcedureDDL(procName, ddl) {
+  return `DROP PROCEDURE IF EXISTS \`${procName}\`;
+${ddl.trim()}`;
 }
 
 async function compareFiles(file1, file2, type) {
@@ -101,7 +88,7 @@ async function compare() {
         .replace(/^USE .*?;$/gm, '')           // Remove USE db lines
         .replace(/^DELIMITER .*?$/gm, '')      // Remove any existing delimiters
         .trim();
-      const formatted = formatProcedureDDL(procName, ddl, 'prod');
+      const formatted = formatProcedureDDL(procName, ddl);
       await fs.writeFile(`changes/procedures/${proc}`, formatted);
       console.log(chalk.green(`New procedure detected: ${proc}`));
     } else {
@@ -115,7 +102,7 @@ async function compare() {
           .replace(/^DELIMITER .*?$/gm, '')      // Remove any existing delimiters
           .trim();
         ddl = ddl.replace(new RegExp(config.dev.database, 'g'), config.prod.database);
-        const formatted = formatProcedureDDL(procName, ddl, 'prod');
+        const formatted = formatProcedureDDL(procName, ddl);
         await fs.writeFile(`changes/procedures/${proc}`, formatted);
         console.log(chalk.yellow(`Changes detected in procedure: ${proc}`));
       }
